@@ -13,3 +13,9 @@ SOURCES += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+HEADERS += \
+    ClassUnit.h \
+    MethodUnit.h \
+    PrintOperatorUnit.h \
+    Unit.h
