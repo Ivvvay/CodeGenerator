@@ -18,6 +18,7 @@ HEADERS += \
     CSharpUnit.h \
     ClassUnit.h \
     CppUnit.h \
+    Factory.h \
     JavaUnit.h \
     MethodUnit.h \
     PrintOperatorUnit.h \

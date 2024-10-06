@@ -11,38 +11,24 @@ class ClassJAVA : public ClassUnit
 {
 
 public:
-    explicit ClassJAVA( const std::string& name, Flags modifier = 0 )
+    ClassJAVA(const std::string& name) : ClassUnit(name) {}
+
+    std::string compile( unsigned int level = 0 ) const override
     {
-        m_name = name;
-        m_modifier =  modifier;
-    }
+        std::string result = generateShift(level) + "class " + m_name + " {\n";
 
-    std::string compile( unsigned int level = 0 ) const
-    {
-        std::string result = generateShift( level );
+        for (size_t i = 0; i < ACCESS_MODIFIERS.size(); ++i) {
+            if (m_fields[i].empty()) {
+                continue;
+            }
 
-        if(m_modifier & PUBLIC)
-            result += "public ";
-        else
-            if(m_modifier & FILE)
-                result += "file ";
-            else
-                if(m_modifier & INTERNAL)
-                    result += "internal ";
-
-        if(m_modifier & FINAL)
-            result += "final ";
-        else
-            if(m_modifier & ABSTRACT)
-                result += "abstract ";
-
-        result += "class " + m_name  + " {\n";
-
-        for( const auto& b : m_fields ) {
-            result += b->compile( level + 1 );
+            for (const auto& f : m_fields[i]) {
+                result += f->compile(level + 1);
+                result += "\n";
+            }
         }
 
-        result += generateShift( level ) + "};\n";
+        result += generateShift(level) + "};\n";
         return result;
     }
 };
@@ -50,35 +36,35 @@ public:
 class MethodJAVA : public MethodUnit
 {
 public:
-    MethodJAVA( const std::string& name, const std::string& returnType, Flags modifier )
-    {
-        m_name = name;
-        m_returnType = returnType;
-        m_modifier = modifier;
-    }
+    enum Modifier {
+        STATIC = 1,
+        FINAL = 1 << 3,
+        ABSTRACT = 1 << 4,
+        PUBLIC = 1 << 5,
+        PROTECTED = 1 << 6,
+        PRIVATE = 1 << 7
+    };
+public:
+    MethodJAVA(const std::string& name, const std::string& returnType, Flags flags)
+        : MethodUnit(name, returnType, flags) {}
 
-
-    std::string compile( unsigned int level = 0 ) const
+    std::string compile( unsigned int level = 0 ) const override
     {
         std::string result = generateShift( level );
 
-        if(m_modifier & PUBLIC)
+        if (m_flags & PUBLIC) {
             result += "public ";
-        else
-            if(m_modifier & FILE)
-                result += "file ";
-            else
-                if(m_modifier & INTERNAL)
-                    result += "internal ";
+        } else if (m_flags & PROTECTED) {
+            result += "protected ";
+        } else if (m_flags & PRIVATE) {
+            result += "private ";
+        }
 
-        if(m_modifier & STATIC)
+        if (m_flags & STATIC) {
             result += "static ";
-
-        if(m_modifier & FINAL)
+        } else if (m_flags & FINAL) {
             result += "final ";
-        else
-            if(m_modifier & ABSTRACT)
-                result += "abstract ";
+        }
 
         result += m_returnType + " " + m_name + "(){\n";
 
@@ -94,12 +80,11 @@ public:
 class PrintOperatorJAVA : public PrintOperatorUnit
 {
 public:
-    explicit PrintOperatorJAVA( const std::string& text )
+    PrintOperatorJAVA(const std::string& text) : PrintOperatorUnit(text) {}
+
+    std::string compile( unsigned int level = 0 ) const override
     {
-        m_text = text;
-    }
-    std::string compile( unsigned int level = 0 ) const {
-        return generateShift( level ) + "println( \"" + m_text + "\" );\n";
+        return generateShift( level ) + "System.out.println( \"" + m_text + "\" );\n";
     }
 };
 

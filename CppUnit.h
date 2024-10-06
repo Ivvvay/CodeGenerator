@@ -10,103 +10,60 @@
 
 class ClassCpp: public ClassUnit
 {
-
 public:
-    std::vector< bool > ACCESS_MODIFIERS = {0, 0, 0};
+    ClassCpp( const std::string& name) : ClassUnit(name) {}
 
-    explicit ClassCpp( const std::string& name, Flags modifier = PRIVATE )
-    {
-        m_name = name;
-
-        if(!(modifier & PUBLIC || modifier & PROTECTED || modifier & PRIVATE ))
-            modifier |= PRIVATE;
-
-        m_modifier =  modifier;
-    }
-
-    void add( const std::shared_ptr< Unit >& unit ) {
-
-        qDebug() << unit->getModifier();
-
-        if(unit->getModifier() & PUBLIC)
-            ACCESS_MODIFIERS[0] = true;
-        if(unit->getModifier() & PROTECTED)
-            ACCESS_MODIFIERS[1] = true;
-        if(unit->getModifier() & PRIVATE)
-            ACCESS_MODIFIERS[2] = true;
-
-        m_fields.push_back( unit );
-    }
-
-    std::string compile( unsigned int level = 0 ) const
+    std::string compile( unsigned int level = 0 ) const override
     {
         std::string result = generateShift( level ) + "class " + m_name + " {\n";
 
+        for (size_t i = 0; i < ACCESS_MODIFIERS.size(); ++i) {
+            if (m_fields[i].empty()) {
+                continue;
+            }
 
-        if(ACCESS_MODIFIERS[0])
-        {
-            result += generateShift( level ) + "public:\n";
-            for( const auto& b : m_fields ) {
-                if(b->getModifier() & PUBLIC)
-                    result += b->compile( level + 1 );
+            result += ACCESS_MODIFIERS[i] + ":\n";
+
+            for (const auto& f : m_fields[i]) {
+                result += f->compile(level + 1);
+                result += "\n";
             }
         }
 
-
-        if(ACCESS_MODIFIERS[1])
-        {
-            result += generateShift( level ) + "protected:\n";
-            for( const auto& b : m_fields ) {
-                if(b->getModifier() & PROTECTED)
-                    result += b->compile( level + 1 );
-            }
-        }
-
-
-        if(ACCESS_MODIFIERS[2])
-        {
-            result += generateShift( level ) + "private:\n";
-            for( const auto& b : m_fields ) {
-                if(b->getModifier() & PRIVATE)
-                    result += b->compile( level + 1 );
-            }
-        }
-
-        result += generateShift( level ) + "};\n";
-
+        result += generateShift(level) + "};\n";
         return result;
     }
-
-
 };
 
 class MethodCpp: public MethodUnit
 {
 public:
-    MethodCpp( const std::string& name, const std::string& returnType, Flags modifier = PRIVATE )
+    enum Modifier {
+        STATIC = 1,
+        CONST = 1 << 1,
+        VIRTUAL = 1 << 2
+    };
+public:
+    MethodCpp(const std::string& name, const std::string& returnType, Flags flags) : MethodUnit(name, returnType, flags) {}
+
+    std::string compile( unsigned int level = 0 ) const override
     {
-        m_name = name;
-        m_returnType = returnType;
-
-        if(!(modifier & PUBLIC || modifier & PROTECTED || modifier & PRIVATE ))
-            modifier |= PRIVATE;
-
-        m_modifier = modifier;
-    }
-
-    std::string compile( unsigned int level = 0 ) const {
         std::string result = generateShift( level );
-        if( m_modifier & STATIC ) {
+
+        if( m_flags  & STATIC ) {
             result += "static ";
-        } else if( m_modifier & VIRTUAL ) {
+        } else if( m_flags  & VIRTUAL ) {
             result += "virtual ";
         }
+
         result += m_returnType + " ";
         result += m_name + "()";
-        if( m_modifier & CONST ) {
+
+        if( m_flags  & CONST ) {
             result += " const";
         }
         result += " {\n";
+
         for( const auto& b : m_body ) {
             result += b->compile( level + 1 );
         }
@@ -121,11 +78,10 @@ public:
 class PrintOperatorCpp: public PrintOperatorUnit
 {
 public:
-    explicit PrintOperatorCpp( const std::string& text )
+    PrintOperatorCpp(const std::string& text) : PrintOperatorUnit(text) {}
+
+    std::string compile( unsigned int level = 0 ) const override
     {
-        m_text = text;
-    }
-    std::string compile( unsigned int level = 0 ) const {
         return generateShift( level ) + "printf( \"" + m_text + "\" );\n";
     }
 };

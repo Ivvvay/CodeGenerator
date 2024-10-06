@@ -10,35 +10,24 @@
 class ClassCSharp : public ClassUnit
 {
 public:
-    ClassCSharp();
+    ClassCSharp(const std::string& name) : ClassUnit(name) {}
 
-public:
-    explicit ClassCSharp( const std::string& name, Flags modifier = 0 )
-    {
-        m_name = name;
-        m_modifier =  modifier;
-    }
-
-    std::string compile( unsigned int level = 0 ) const
+    std::string compile( unsigned int level = 0 ) const override
     {
         std::string result = generateShift( level );
 
-        if(m_modifier & PUBLIC)
-            result += "public ";
-        else
-            if(m_modifier & FILE)
-                result += "file ";
-            else
-                if(m_modifier & INTERNAL)
-                    result += "internal ";
+        for (size_t i = 0; i < ACCESS_MODIFIERS.size(); ++i) {
+            if (m_fields[i].empty()) {
+                continue;
+            }
 
-        result += "class " + m_name  + " {\n";
-
-        for( const auto& b : m_fields ) {
-            result += b->compile( level + 1 );
+            for (const auto& f : m_fields[i]) {
+                result += f->compile(level + 1);
+                result += "\n";
+            }
         }
 
-        result += generateShift( level ) + "};\n";
+        result += generateShift(level) + "}\n";
         return result;
     }
 };
@@ -46,60 +35,59 @@ public:
 class MethodCSharp : public MethodUnit
 {
 public:
-    MethodCSharp( const std::string& name, const std::string& returnType, Flags modifier )
-    {
-        m_name = name;
-        m_returnType = returnType;
-        m_modifier = modifier;
-    }
+    enum Modifier {
+        STATIC = 1,
+        CONST = 1 << 1,
+        VIRTUAL = 1 << 2,
+        PUBLIC = 1 << 5,
+        PROTECTED = 1 << 6,
+        PRIVATE = 1 << 7,
+        INTERNAL = 1 << 8
+    };
+public:
+    MethodCSharp(const std::string& name, const std::string& returnType, Flags flags) : MethodUnit(name, returnType, flags) {}
 
-    std::string compile( unsigned int level = 0 ) const
+    std::string compile( unsigned int level = 0 ) const override
     {
         std::string result = generateShift( level );
 
-        if(m_modifier & PUBLIC)
+        if (m_flags & PUBLIC) {
             result += "public ";
-        else
-            if(m_modifier & PROTECTED)
-                result += "protected ";
-            else
-                if(m_modifier & FILE)
-                    result += "public ";
-                else
-                    if(m_modifier & INTERNAL)
-                        result += "internal ";
-                    else
-                        if(m_modifier & PRIVATE)
-                            result += "private ";
-                        else
-                            if(m_modifier & PRIVATE_PROTECTED)
-                                result += "private protected ";
-                            else
-                                if(m_modifier & PROTECTED_INTERNAL)
-                                    result += "protected internal ";
+        } else if (m_flags & PROTECTED) {
+            result += "protected ";
+        } else if (m_flags & PRIVATE) {
+            result += "private ";
+        } else if (m_flags & INTERNAL) {
+            result += "internal ";
+        }
 
+        if (m_flags & STATIC) {
+            result += "static ";
+        } else if (m_flags & CONST) {
+            result += "const ";
+        } else if (m_flags & VIRTUAL) {
+            result += "virtual ";
+        }
 
         result += m_returnType + " " + m_name + "(){\n";
 
         for( const auto& b : m_body ) {
             result += b->compile( level + 1 );
         }
-        result += generateShift( level ) + "}\n";
 
+        result += generateShift( level ) + "}\n";
         return result;
     }
 };
 
 class PrintOperatorCSharp : public PrintOperatorUnit {
 public:
-    explicit PrintOperatorCSharp( const std::string& text )
+    PrintOperatorCSharp(const std::string& text) : PrintOperatorUnit(text) {}
+
+    std::string compile( unsigned int level = 0 ) const override
     {
-        m_text = text;
-    }
-    std::string compile( unsigned int level = 0 ) const {
-        return generateShift( level ) + "printf( \"" + m_text + "\" );\n";
+        return generateShift( level ) + "Console.WriteLine( \"" + m_text + "\" );\n";
     }
 };
-
 
 #endif // CSHARPUNIT_H

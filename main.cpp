@@ -4,54 +4,49 @@
 #include "MethodUnit.h"
 #include "PrintOperatorUnit.h"
 
+#include "Factory.h"
 #include "CppUnit.h"
 #include "CSharpUnit.h"
 #include "JavaUnit.h"
 
-std::string generateCpp() {
-    ClassCpp myClass( "CppClass" );
+std::string generateProgram(Factory* factory) {
+    std::shared_ptr<ClassUnit> myClass = factory->buildClass("MyClass");
 
-    auto myClass2= std::make_shared< ClassCpp >( "MyClassCpp", ClassCpp::PUBLIC);
-    myClass.add(myClass2);
+    myClass->add(
+        factory->buildMethod("testFunc1", "void", MethodUnit::PUBLIC),
+        ClassUnit::PUBLIC
+        );
 
-    auto method1 = std::make_shared< MethodCpp >("testfunAc1", "real", MethodCpp::VIRTUAL | MethodCpp::PROTECTED);
+    myClass->add(
+        factory->buildMethod("testFunc2", "void", MethodUnit::STATIC | MethodUnit::PRIVATE),
+        ClassUnit::PRIVATE
+        );
 
-    myClass2->add(method1);
+    myClass->add(
+        factory->buildMethod("testFunc3", "void", MethodUnit::CONST | MethodUnit::PROTECTED | MethodUnit::PRIVATE),
+        ClassUnit::PROTECTED
+        );
 
-    method1->add(std::make_shared< PrintOperatorCpp >( "(Hello, Cpp!" ));
-
-    return myClass.compile();
-}
-
-std::string generateCSharp() {
-
-    auto myClass = std::make_shared< ClassCSharp >( "MyClassC#", ClassCSharp::INTERNAL);
-
-    auto method = std::make_shared< MethodCSharp >( "testFunc2", "void", ClassCSharp::PRIVATE_PROTECTED );
-
-    method->add(std::make_shared< PrintOperatorCSharp >( "(Hello, C#!" ));
-
-    myClass->add(method);
-
-    return myClass->compile();
-}
-
-std::string generateJAVA() {
-    auto myClass = std::make_shared< ClassJAVA >( "MeClassJAVA", ClassJAVA::FINAL | ClassJAVA::PUBLIC);
-
-    auto method1 = std::make_shared< MethodJAVA >("testFucn1", "long",
-                                                MethodJAVA::PROTECTED | MethodJAVA::ABSTRACT | MethodJAVA::STATIC);
-
-    method1->add(std::make_shared< PrintOperatorJAVA >( "(Hello, JAVA!" ));
-
-    myClass->add(method1);
+    std::shared_ptr<MethodUnit> method = factory->buildMethod("testFunc4", "void", MethodUnit::STATIC | MethodUnit::PROTECTED);
+    method->add(factory->buildPrintOperator( R"(Hello, world!\n)"));
+    myClass->add(method, ClassUnit::PROTECTED);
 
     return myClass->compile();
 }
 
 int main()
 {
-    std::cout << generateJAVA() << std::endl;
+    std::cout << "C++:" << std::endl;
+    CppFactory cppFactory;
+    std::cout << generateProgram(&cppFactory) << std::endl;
+
+    std::cout << "C#:" << std::endl;
+    CSharpFactory cSharpFactory;
+    std::cout << generateProgram(&cSharpFactory) << std::endl;
+
+    std::cout << "JAVA:" << std::endl;
+    JavaFactory javaFactory;
+    std::cout << generateProgram(&javaFactory) << std::endl;
 
     return 0;
 }
