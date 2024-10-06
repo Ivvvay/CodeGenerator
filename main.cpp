@@ -4,17 +4,28 @@
 #include "MethodUnit.h"
 #include "PrintOperatorUnit.h"
 
-#include "ClassCSharp.h"
-#include "MethodCSharp.h"
+#include "CSharpUnit.h"
+
 
 std::string generateProgram() {
+    auto myClass = std::make_shared< ClassCSharp >( "MyClass", ClassCSharp::INTERNAL);
 
-    ClassCSharp myClass( "MyClass", ClassCSharp::INTERNAL);
+    auto myClass3 = std::make_shared< ClassCSharp >( "MyClass3", ClassCSharp::PUBLIC);
 
-    myClass.add(std::make_shared< MethodCSharp >( "testFunc1", "void", 0 ));
+    auto method = std::make_shared< MethodCSharp >( "testFunc2", "void", 0 );
 
-    return myClass.compile();
+    method->add(std::make_shared< PrintOperatorUnitCSharp >( R"(Hello, world!\n)" ));
+
+    method->add(myClass3);
+
+    method->add(std::make_shared< MethodCSharp >( "testFunc3", "real", 4 ));
+
+    myClass->add(method);
+
+
+    return myClass->compile();
 }
+
 
 int main()
 {
