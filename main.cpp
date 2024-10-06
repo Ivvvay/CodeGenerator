@@ -1,13 +1,6 @@
 #include <QCoreApplication>
-#include "Unit.h"
-#include "ClassUnit.h"
-#include "MethodUnit.h"
-#include "PrintOperatorUnit.h"
 
 #include "Factory.h"
-#include "CppUnit.h"
-#include "CSharpUnit.h"
-#include "JavaUnit.h"
 
 std::string generateProgram(Factory* factory) {
     std::shared_ptr<ClassUnit> myClass = factory->buildClass("MyClass");
